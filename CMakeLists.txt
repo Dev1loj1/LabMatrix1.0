@@ -33,7 +33,11 @@ if(BUILD_TESTING)
     add_executable(test_tmathvector TMathVector/tests/test_tmathvector.cpp)
     target_link_libraries(test_tmathvector PRIVATE TMathVector GTest::gtest_main)
 
+    add_executable(test_tmatrix TMatrix/tests/test_tmatrix.cpp)
+    target_link_libraries(test_tmatrix PRIVATE TMatrix GTest::gtest_main)
+
     include(GoogleTest)
     gtest_discover_tests(test_tvector DISCOVERY_MODE PRE_TEST)
     gtest_discover_tests(test_tmathvector DISCOVERY_MODE PRE_TEST)
+    gtest_discover_tests(test_tmatrix DISCOVERY_MODE PRE_TEST)
 endif()

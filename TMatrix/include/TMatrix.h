@@ -42,3 +42,21 @@ public:
 private:
     void require_same_order(const TMatrix& other) const;
 };
+
+template <typename T>
+TMatrix<T>::TMatrix() = default;
+
+template <typename T>
+TMatrix<T>::TMatrix(std::size_t size) : Base(size) {
+    for (std::size_t row = 0; row < size; ++row) (*this)[row] = Row(size);
+}
+
+template <typename T>
+TMatrix<T>::TMatrix(std::initializer_list<std::initializer_list<T>> rows) : Base(rows.size()) {
+    const std::size_t size = rows.size();
+    std::size_t row = 0;
+    for (const auto& values : rows) {
+        if (values.size() != size) throw std::invalid_argument("TMatrix must be square");
+        (*this)[row++] = Row(values);
+    }
+}
