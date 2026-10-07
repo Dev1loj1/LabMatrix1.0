@@ -61,3 +61,28 @@ TEST(TVector, CheckedAccessThrows) {
     TVector<int> empty;
     EXPECT_THROW(empty.front(), std::logic_error);
 }
+
+TEST(TVectorShrinkToFit, ReleasesUnusedMemory) {
+    TVector<int> vector{1, 2, 3};
+    ASSERT_GT(vector.capacity(), vector.size());
+    vector.shrink_to_fit();
+    EXPECT_EQ(vector.capacity(), vector.size());
+    EXPECT_EQ(vector, (TVector<int>{1, 2, 3}));
+}
+
+TEST(TVectorShrinkToFit, PreservesWrappedLogicalOrder) {
+    TVector<int> vector{1, 2, 3, 4};
+    vector.pop_front();
+    vector.push_back(5);
+    vector.shrink_to_fit();
+    EXPECT_EQ(vector.capacity(), 4u);
+    EXPECT_EQ(vector, (TVector<int>{2, 3, 4, 5}));
+}
+
+TEST(TVectorShrinkToFit, ReleasesEmptyStorageAndVectorRemainsUsable) {
+    TVector<int> vector;
+    vector.shrink_to_fit();
+    EXPECT_EQ(vector.capacity(), 0u);
+    vector.push_back(42);
+    EXPECT_EQ(vector.front(), 42);
+}

@@ -163,6 +163,13 @@ public:
 
     void clear() noexcept { _mem._size = 0; _front = _back = 0; }
 
+    // Освобождает всю память, которая не занята элементами.
+    void shrink_to_fit() {
+        if (_mem._capacity != _mem._size || _front != 0) {
+            reallocate(_mem._size);
+        }
+    }
+
     friend bool operator==(const TVector& left, const TVector& right) {
         if (left.size() != right.size()) return false;
         for (std::size_t i = 0; i < left.size(); ++i) if (left[i] != right[i]) return false;
