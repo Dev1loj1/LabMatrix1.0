@@ -12,6 +12,10 @@ add_library(TMathVector STATIC TMathVector/src/TMathVector.cpp)
 target_include_directories(TMathVector PUBLIC TMathVector/include)
 target_link_libraries(TMathVector PUBLIC TVector)
 
+add_library(TMatrix STATIC TMatrix/src/TMatrix.cpp)
+target_include_directories(TMatrix PUBLIC TMatrix/include)
+target_link_libraries(TMatrix PUBLIC TMathVector)
+
 include(CTest)
 if(BUILD_TESTING)
     include(FetchContent)
