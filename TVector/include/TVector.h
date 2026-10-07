@@ -5,7 +5,9 @@
 #include <cstddef>
 #include <initializer_list>
 #include <iostream>
+#include <iterator>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 
 // TVector сохраняет идею исходного Vector: элементы лежат в кольцевом буфере.
@@ -17,6 +19,68 @@ protected:
     std::size_t _back = 0;
 
 public:
+    template <typename Type>
+    class Iterator {
+        Type* _data = nullptr;
+        std::size_t _capacity = 0;
+        std::size_t _front = 0;
+        std::ptrdiff_t _index = 0;
+
+        Type& current() const {
+            if (_capacity == 0) return _data[_index];
+            const auto physical = (_front + static_cast<std::size_t>(_index)) % _capacity;
+            return _data[physical];
+        }
+
+        template <typename>
+        friend class Iterator;
+
+    public:
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = std::remove_const_t<Type>;
+        using difference_type = std::ptrdiff_t;
+        using pointer = Type*;
+        using reference = Type&;
+
+        Iterator() = default;
+        explicit Iterator(Type* pointer) : _data(pointer) {}
+        Iterator(Type* data, std::size_t capacity, std::size_t front, std::ptrdiff_t index)
+            : _data(data), _capacity(capacity), _front(front), _index(index) {}
+        Iterator(const Iterator&) = default;
+        Iterator& operator=(const Iterator&) = default;
+
+        template <typename Other,
+                  typename = std::enable_if_t<std::is_const_v<Type> &&
+                                              std::is_same_v<std::remove_const_t<Type>, Other>>>
+        Iterator(const Iterator<Other>& other)
+            : _data(other._data), _capacity(other._capacity), _front(other._front), _index(other._index) {}
+
+        bool operator==(const Iterator& other) const noexcept {
+            return _data == other._data && _capacity == other._capacity &&
+                   _front == other._front && _index == other._index;
+        }
+
+        bool operator!=(const Iterator& other) const noexcept { return !(*this == other); }
+
+        Iterator& operator++() { ++_index; return *this; }
+        Iterator operator++(int) { Iterator copy(*this); ++(*this); return copy; }
+        Iterator& operator--() { --_index; return *this; }
+        Iterator operator--(int) { Iterator copy(*this); --(*this); return copy; }
+
+        Iterator operator+(int offset) const { Iterator copy(*this); return copy += offset; }
+        Iterator operator-(int offset) const { Iterator copy(*this); return copy -= offset; }
+        Iterator& operator+=(int offset) { _index += offset; return *this; }
+        Iterator& operator-=(int offset) { _index -= offset; return *this; }
+
+        Type& operator*() { return current(); }
+        const Type& operator*() const { return current(); }
+        Type* operator->() { return &current(); }
+        const Type* operator->() const { return &current(); }
+    };
+
+    using iterator = Iterator<T>;
+    using const_iterator = Iterator<const T>;
+
     explicit TVector(std::size_t size = 0) : _mem(size) {
         _back = size == 0 ? 0 : size - 1;
     }
@@ -162,6 +226,13 @@ public:
     }
 
     void clear() noexcept { _mem._size = 0; _front = _back = 0; }
+
+    iterator begin() noexcept { return iterator(_mem._data, _mem._capacity, _front, 0); }
+    iterator end() noexcept { return iterator(_mem._data, _mem._capacity, _front, static_cast<std::ptrdiff_t>(_mem._size)); }
+    const_iterator begin() const noexcept { return const_iterator(_mem._data, _mem._capacity, _front, 0); }
+    const_iterator end() const noexcept { return const_iterator(_mem._data, _mem._capacity, _front, static_cast<std::ptrdiff_t>(_mem._size)); }
+    const_iterator cbegin() const noexcept { return begin(); }
+    const_iterator cend() const noexcept { return end(); }
 
     // Освобождает всю память, которая не занята элементами.
     void shrink_to_fit() {

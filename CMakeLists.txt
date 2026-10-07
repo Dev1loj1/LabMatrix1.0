@@ -16,6 +16,9 @@ add_library(TMatrix STATIC TMatrix/src/TMatrix.cpp)
 target_include_directories(TMatrix PUBLIC TMatrix/include)
 target_link_libraries(TMatrix PUBLIC TMathVector)
 
+add_executable(iterator_demo examples/iterator_demo.cpp)
+target_link_libraries(iterator_demo PRIVATE TVector)
+
 include(CTest)
 if(BUILD_TESTING)
     include(FetchContent)

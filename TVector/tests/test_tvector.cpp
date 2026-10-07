@@ -86,3 +86,50 @@ TEST(TVectorShrinkToFit, ReleasesEmptyStorageAndVectorRemainsUsable) {
     vector.push_back(42);
     EXPECT_EQ(vector.front(), 42);
 }
+
+TEST(TVectorIterator, TraversesAndChangesElements) {
+    TVector<int> vector{1, 2, 3, 4};
+    for (TVector<int>::iterator current = vector.begin(); current != vector.end(); ++current) {
+        *current *= 2;
+    }
+    EXPECT_EQ(vector, (TVector<int>{2, 4, 6, 8}));
+}
+
+TEST(TVectorIterator, TraversesConstVector) {
+    const TVector<int> vector{1, 2, 3, 4};
+    int sum = 0;
+    for (TVector<int>::const_iterator current = vector.begin(); current != vector.end(); current++) {
+        sum += *current;
+    }
+    EXPECT_EQ(sum, 10);
+}
+
+TEST(TVectorIterator, SupportsArithmeticAndDecrement) {
+    TVector<int> vector{10, 20, 30, 40};
+    auto current = vector.begin();
+    current += 3;
+    EXPECT_EQ(*current, 40);
+    EXPECT_EQ(*(current - 2), 20);
+    EXPECT_EQ(*(vector.begin() + 2), 30);
+    current--;
+    EXPECT_EQ(*current, 30);
+    --current;
+    EXPECT_EQ(*current, 20);
+}
+
+TEST(TVectorIterator, PreservesLogicalOrderOfWrappedBuffer) {
+    TVector<int> vector{1, 2, 3, 4};
+    vector.pop_front();
+    vector.push_back(5);
+    int expected = 2;
+    for (const int value : vector) EXPECT_EQ(value, expected++);
+}
+
+TEST(TVectorIterator, ConstructsFromPointerAndCopies) {
+    int values[] = {7, 8, 9};
+    TVector<int>::iterator first(values);
+    TVector<int>::iterator copy(first);
+    EXPECT_EQ(*copy, 7);
+    copy = first + 2;
+    EXPECT_EQ(*copy, 9);
+}
