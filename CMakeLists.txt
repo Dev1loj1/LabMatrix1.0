@@ -8,6 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(TVector STATIC TVector/src/TVector.cpp)
 target_include_directories(TVector PUBLIC TVector/include)
 
+add_library(TMathVector STATIC TMathVector/src/TMathVector.cpp)
+target_include_directories(TMathVector PUBLIC TMathVector/include)
+target_link_libraries(TMathVector PUBLIC TVector)
+
 include(CTest)
 if(BUILD_TESTING)
     include(FetchContent)
