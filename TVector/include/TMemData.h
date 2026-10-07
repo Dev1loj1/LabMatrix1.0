@@ -3,10 +3,15 @@
 #include <algorithm>
 #include <cstddef>
 #include <initializer_list>
+#include <random>
 #include <stdexcept>
 #include <utility>
 
 inline constexpr std::size_t MEM_STEP = 15;
+
+inline std::size_t calculate_capacity(std::size_t size) {
+    return (size / MEM_STEP + 1) * MEM_STEP;
+}
 
 template <typename T>
 class TVector;
@@ -31,12 +36,12 @@ public:
             throw std::invalid_argument("Null source array");
         }
         allocate_for(size);
-        std::copy(values, values + size, _data);
+        if (size != 0) std::copy(values, values + size, _data);
     }
 
     TMemData(const TMemData& other) {
         allocate_exact(other._capacity, other._size);
-        std::copy(other._data, other._data + _size, _data);
+        if (_size != 0) std::copy(other._data, other._data + _size, _data);
     }
 
     TMemData(TMemData&& other) noexcept
@@ -87,6 +92,35 @@ public:
     const T* get_data_const() const noexcept { return _data; }
     T* get_data_changeable() noexcept { return _data; }
 
+    void set_memory(std::size_t size) {
+        delete[] _data;
+        _data = nullptr;
+        allocate_for(size);
+    }
+
+    void reset_memory(std::size_t size, std::size_t start_index = 0) {
+        if (_capacity != 0 && start_index >= _capacity) throw std::out_of_range("TMemData start index");
+        const std::size_t new_capacity = calculate_capacity(size);
+        if (new_capacity == _capacity && start_index == 0) {
+            _size = size;
+            return;
+        }
+        T* replacement = new T[new_capacity]{};
+        const std::size_t copy_count = std::min(_size, size);
+        for (std::size_t i = 0; i < copy_count; ++i) {
+            replacement[i] = _data[(start_index + i) % _capacity];
+        }
+        delete[] _data;
+        _data = replacement;
+        _capacity = new_capacity;
+        _size = size;
+    }
+
+    void set_size(std::size_t size) {
+        if (size > _capacity) throw std::invalid_argument("Size is greater than capacity");
+        _size = size;
+    }
+
     void clear_memory() {
         delete[] _data;
         _data = nullptr;
@@ -94,12 +128,8 @@ public:
     }
 
 private:
-    static std::size_t calculate_capacity(std::size_t size) {
-        return size == 0 ? MEM_STEP : ((size - 1) / MEM_STEP + 1) * MEM_STEP;
-    }
-
     void allocate_for(std::size_t size) {
-        allocate_exact(calculate_capacity(size), size);
+        allocate_exact(::calculate_capacity(size), size);
     }
 
     void allocate_exact(std::size_t capacity, std::size_t size) {
@@ -116,3 +146,17 @@ private:
 
     friend class TVector<T>;
 };
+
+template <typename T>
+using MemData = TMemData<T>;
+
+template <typename T>
+void quick_sort(TMemData<T>& memory) {
+    std::sort(memory.get_data_changeable(), memory.get_data_changeable() + memory.get_size());
+}
+
+template <typename T>
+void shuffle(TMemData<T>& memory) {
+    static std::mt19937 generator(std::random_device{}());
+    std::shuffle(memory.get_data_changeable(), memory.get_data_changeable() + memory.get_size(), generator);
+}

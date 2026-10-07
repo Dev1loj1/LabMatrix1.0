@@ -6,6 +6,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <iterator>
+#include <random>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -56,6 +57,9 @@ public:
             : _data(other._data), _capacity(other._capacity), _front(other._front), _index(other._index) {}
 
         bool operator==(const Iterator& other) const noexcept {
+            if (_capacity == 0 && other._capacity == 0) {
+                return _data + _index == other._data + other._index;
+            }
             return _data == other._data && _capacity == other._capacity &&
                    _front == other._front && _index == other._index;
         }
@@ -105,6 +109,8 @@ public:
     std::size_t size() const noexcept { return _mem._size; }
     std::size_t get_capacity() const noexcept { return _mem._capacity; }
     std::size_t capacity() const noexcept { return _mem._capacity; }
+    TMemData<T> get_mem_copy() const { return _mem; }
+    const TMemData<T>& get_mem_original() const noexcept { return _mem; }
 
     T get_front() const { return front(); }
     T get_back() const { return back(); }
@@ -194,6 +200,7 @@ public:
         --_mem._size;
         if (_mem._size == 0) _front = _back = 0;
         else _back = mem_index(_mem._size - 1);
+        shrink_capacity_if_needed();
     }
 
     void pop_front() {
@@ -202,6 +209,7 @@ public:
         --_mem._size;
         if (_mem._size == 0) _front = _back = 0;
         else _back = mem_index(_mem._size - 1);
+        shrink_capacity_if_needed();
     }
 
     void pop_back_many(std::size_t count) {
@@ -273,7 +281,7 @@ protected:
     std::size_t mem_index(std::size_t index) const noexcept { return (_front + index) % _mem._capacity; }
 
     void ensure_capacity(std::size_t required) {
-        if (required > _mem._capacity) reallocate(TMemData<T>::calculate_capacity(required));
+        if (required >= _mem._capacity) reallocate(::calculate_capacity(required));
     }
 
     void reallocate(std::size_t new_capacity) {
@@ -284,6 +292,10 @@ protected:
         _mem._capacity = new_capacity;
         _front = 0;
         _back = _mem._size == 0 ? 0 : _mem._size - 1;
+    }
+
+    void shrink_capacity_if_needed() {
+        if (_mem._capacity - _mem._size > MEM_STEP) reallocate(::calculate_capacity(_mem._size));
     }
 
 private:
@@ -303,3 +315,25 @@ private:
 // Совместимость с именем класса в приложенном архиве.
 template <typename T>
 using Vector = TVector<T>;
+
+template <typename T>
+void quick_sort(TVector<T>& vector) {
+    for (std::size_t i = 1; i < vector.size(); ++i) {
+        T value = vector[i];
+        std::size_t position = i;
+        while (position != 0 && value < vector[position - 1]) {
+            vector[position] = std::move(vector[position - 1]);
+            --position;
+        }
+        vector[position] = std::move(value);
+    }
+}
+
+template <typename T>
+void shuffle(TVector<T>& vector) {
+    static std::mt19937 generator(std::random_device{}());
+    for (std::size_t i = vector.size(); i > 1; --i) {
+        std::uniform_int_distribution<std::size_t> distribution(0, i - 1);
+        std::swap(vector[i - 1], vector[distribution(generator)]);
+    }
+}

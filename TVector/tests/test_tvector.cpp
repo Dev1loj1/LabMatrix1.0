@@ -133,3 +133,18 @@ TEST(TVectorIterator, ConstructsFromPointerAndCopies) {
     copy = first + 2;
     EXPECT_EQ(*copy, 9);
 }
+
+TEST(TVectorCompatibility, KeepsOriginalCapacityStepsAndAccessors) {
+    TVector<int> vector(15);
+    EXPECT_EQ(vector.capacity(), 30u);
+    EXPECT_EQ(vector.get_mem_original().get_size(), 15u);
+    EXPECT_NE(vector.get_mem_copy().get_data_const(), vector.get_mem_original().get_data_const());
+}
+
+TEST(TVectorCompatibility, SortsLogicalElements) {
+    TVector<int> vector{4, 1, 3, 2};
+    vector.pop_front();
+    vector.push_back(0);
+    quick_sort(vector);
+    EXPECT_EQ(vector, (TVector<int>{0, 1, 2, 3}));
+}
