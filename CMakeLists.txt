@@ -25,6 +25,11 @@ if(BUILD_TESTING)
 
     add_executable(test_tvector TVector/tests/test_tvector.cpp)
     target_link_libraries(test_tvector PRIVATE TVector GTest::gtest_main)
+
+    add_executable(test_tmathvector TMathVector/tests/test_tmathvector.cpp)
+    target_link_libraries(test_tmathvector PRIVATE TMathVector GTest::gtest_main)
+
     include(GoogleTest)
     gtest_discover_tests(test_tvector DISCOVERY_MODE PRE_TEST)
+    gtest_discover_tests(test_tmathvector DISCOVERY_MODE PRE_TEST)
 endif()
