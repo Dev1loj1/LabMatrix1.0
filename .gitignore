@@ -1,0 +1,5 @@
+/cmake-build-*/
+/build/
+/_source_archive/
+/.idea/
+*.user
